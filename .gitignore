@@ -205,3 +205,66 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# 补充：PyTorch / ML 项目常见忽略（避免提交大文件、缓存、实验输出）
+
+# 虚拟环境 / Conda / Pipenv
+venv/
+env/
+.venv/
+ENV/
+condaenv/
+*.env
+
+# PyCharm / IDE 配置（防止之前冲突重现）
+.idea/
+*.iml
+
+# Jupyter / Notebook 临时文件
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# PyTorch / 深度学习特定
+# 模型权重、checkpoint（太大，别提交！用云盘或 Hugging Face 分享）
+*.pth
+*.pt
+*.ckpt
+*.weights
+*.onnx
+*.engine          # TensorRT 引擎
+*.trt
+
+# 实验输出 / 日志 / 可视化（wandb、tensorboard 等）
+runs/
+output/
+outputs/
+results/
+logs/
+wandb/
+tensorboard/
+lightning_logs/
+checkpoints/
+exps/
+exp/
+
+# 数据集 / 大文件（纤维图像、标注、视频等）
+data/
+dataset/
+datasets/
+annotations/
+images/
+labels/
+videos/
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# 其他临时 / 系统文件
+.DS_Store          # macOS
+Thumbs.db          # Windows
+*.log
+*.tmp
+*.bak
+*.swp
+*~
