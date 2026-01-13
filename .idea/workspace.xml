@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="66bd7b2b-822c-4b70-b37e-0b6487827c62" name="更改" comment="运行基础优化" />
+    <list default="true" id="66bd7b2b-822c-4b70-b37e-0b6487827c62" name="更改" comment="运行环境优化">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -114,7 +116,23 @@
       <option name="project" value="LOCAL" />
       <updated>1768274353974</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="增加结果可视化">
+      <option name="closed" value="true" />
+      <created>1768296651113</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1768296651113</updated>
+    </task>
+    <task id="LOCAL-00007" summary="运行环境优化">
+      <option name="closed" value="true" />
+      <created>1768296689369</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1768296689369</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -122,6 +140,8 @@
     <MESSAGE value="添加数据集操作脚本，确保数据集干净整洁，为未来动态增强准备" />
     <MESSAGE value="增加数据集操作的说明" />
     <MESSAGE value="运行基础优化" />
-    <option name="LAST_COMMIT_MESSAGE" value="运行基础优化" />
+    <MESSAGE value="增加结果可视化" />
+    <MESSAGE value="运行环境优化" />
+    <option name="LAST_COMMIT_MESSAGE" value="运行环境优化" />
   </component>
 </project>

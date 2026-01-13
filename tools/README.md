@@ -1,85 +1,85 @@
-### Getting Started: A Complete Workflow
+### 入门指南：完整工作流程
 
-This guide provides a complete, step-by-step workflow from setting up the environment to training, exporting, and running inference with TensorRT.
+本指南提供了一个完整的逐步工作流程，从环境设置到训练、导出以及使用 TensorRT 进行推理。
 
-#### **1. Environment Setup with Docker (Recommended)**
+#### **1. 使用 Docker 配置环境（推荐）**
 
-Using Docker is the recommended way to ensure all dependencies, drivers, and CUDA versions are perfectly aligned. This eliminates "it works on my machine" issues.
+使用 Docker 是推荐的方式，可以确保所有依赖项、驱动程序和 CUDA 版本完美匹配。这消除了“在我的机器上可以运行”的问题。
 
-*   **Step 1.1: Build and Run the Container**
+*   **步骤 1.1: 构建并运行容器**
 
-    From the project's root directory, run `docker compose`. This will build the image based on the `Dockerfile` and start the service in the background.
+    从项目根目录运行 `docker compose`。这将基于 `Dockerfile` 构建镜像并在后台启动服务。
 
     ```bash
     docker compose up --build -d
     ```
 
-*   **Step 1.2: Verify the Container is Running**
+*   **步骤 1.2: 验证容器是否正在运行**
 
-    Check that the container is up and running. Note its name for the next step.
+    检查容器是否已启动并正在运行。记下其名称以备下一步使用。
     ```bash
     docker ps
     ```
 
 ---
 
-#### **2. Training & Evaluation (Using `docker attach`)**
+#### **2. 训练与评估（使用 `docker attach`）**
 
-This method directly attaches your terminal to the container's main process. It's simple but requires careful handling to avoid terminating your session.
+此方法直接将您的终端连接到容器的主进程。它很简单，但需要小心操作以避免意外终止会话。
 
-*   **Step 2.1: Attach to the Container**
+*   **步骤 2.1: 连接到容器**
 
-    Attach your terminal to the running container. You will be dropped into a bash shell.
+    将您的终端连接到正在运行的容器。您将进入一个 bash shell。
 
     ```bash
     docker attach <your_container_name>
     ```
 
-*   **Step 2.2: Run the Training Command**
+*   **步骤 2.2: 运行训练命令**
 
-    Now, *inside the attached shell*, run your training command. `torchrun` will automatically use the GPUs assigned to the container. **Do not run it in the background (`&`)**.
+    现在，在*连接的 shell 内部*，运行您的训练命令。`torchrun` 将自动使用分配给容器的 GPU。**不要在后台运行它（即不要加 `&`）**。
 
     ```bash
-    # Example for 4 GPUs assigned to the container
+    # 示例：分配给容器 4 个 GPU
     torchrun --nproc_per_node=4 --master-port=8989 \
         tools/train.py -c configs/rtdetr/rtdetr_r50vd_6x_coco.yml \
         --amp
     ```
 
-*   **Step 2.3: Detach from the Session (IMPORTANT!)**
+*   **步骤 2.3: 从会话中断开（重要！）**
 
-    With your training running, you can safely detach and leave it running.
+    当您的训练正在运行时，您可以安全地断开连接并让它继续运行。
 
-    **WARNING:** **DO NOT PRESS `Ctrl+C`**. This will kill the training process and potentially the entire container.
+    **警告：** **不要按 `Ctrl+C`**。这将终止训练进程，并可能终止整个容器。
 
-    To safely detach, press the sequence: **`Ctrl+P`**, followed immediately by **`Ctrl+Q`**.
+    要安全断开连接，请按顺序按下：**`Ctrl+P`**，然后立即按 **`Ctrl+Q`**。
 
-    You will return to your local terminal, and the container will continue running the training in the background.
+    您将返回到本地终端，容器将在后台继续运行训练。
 
-*   **Step 2.4: Re-attach to Your Session**
+*   **步骤 2.4: 重新连接到您的会话**
 
-    To check on your training progress, simply run the `docker attach` command again. You will see the live output from your training command.
+    要检查训练进度，只需再次运行 `docker attach` 命令。您将看到训练命令的实时输出。
 
     ```bash
     docker attach <your_container_name>
     ```
-    (Remember to detach with `Ctrl+P`, `Ctrl+Q` when you're done.)
+    （请记住，完成后使用 `Ctrl+P`, `Ctrl+Q` 断开连接。）
 
 ---
 
-#### **3. Exporting & Inference**
+#### **3. 导出与推理**
 
-For tasks like exporting or running inference, which don't need to run for days, it's safer to use `docker exec` to open a new, separate shell.
+对于导出或运行推理等不需要运行几天的任务，使用 `docker exec` 打开一个新的、独立的 shell 更安全。
 
-*   **Step 3.1: Open a New Shell in the Container**
+*   **步骤 3.1: 在容器中打开一个新 Shell**
     ```bash
     docker exec -it <your_container_name> bash
     ```
 
-*   **Step 3.2: Run Export or Inference Commands**
-    Now, inside this new shell, run your commands.
+*   **步骤 3.2: 运行导出或推理命令**
+    现在，在这个新 shell 中，运行您的命令。
     ```bash
-    # Export to ONNX
+    # 导出为 ONNX
     python tools/export_onnx.py \
         -c configs/rtdetr/rtdetr_r50vd_6x_coco.yml \
         -r path/to/trained_checkpoint.pth \
@@ -87,12 +87,12 @@ For tasks like exporting or running inference, which don't need to run for days,
     ```
     
     ```
-    # Convert to TensorRT
+    # 转换为 TensorRT
     bash tools/onnx2trt.sh /path/to/your/model.onnx
     ```
 
     ```
-    # RUN TRT Inference
+    # 运行 TRT 推理
     python references/deploy/rtdetrv2_tensorrt.py \
     --engine /path/to/your/model.trt \
     --image /path/to/your/image.jpg \
@@ -100,25 +100,25 @@ For tasks like exporting or running inference, which don't need to run for days,
     --threshold 0.5
     ```
 
-### Utilities & Tips
+### 实用工具与技巧
 
-*   **Visualize training with TensorBoard:**
-    *   Use the standard port `6006` to avoid conflicts with training.
-    *   Ensure the port `6006` is exposed in your `docker-compose.yml`.
+*   **使用 TensorBoard 可视化训练：**
+    *   使用标准端口 `6006` 以避免与训练冲突。
+    *   确保端口 `6006` 在您的 `docker-compose.yml` 中已暴露。
 
     ```bash
-    # Inside the container
+    # 在容器内部
     tensorboard --logdir=path/to/summary/ --host=0.0.0.0 --port=6006
     ```
 
-*   **Managing the Container Lifecycle:**
-    *   **To temporarily stop** the container without deleting it (e.g., to pause training and resume later):
+*   **管理容器生命周期：**
+    *   **临时停止**容器而不删除它（例如，暂停训练并在稍后恢复）：
         ```bash
         docker compose stop
         ```
-        You can restart it later with `docker compose start`.
+        您可以稍后使用 `docker compose start` 重启它。
 
-    *   **To stop and completely remove** the container, network, and volumes:
+    *   **停止并完全移除**容器、网络和卷：
         ```bash
         docker compose down
         ```

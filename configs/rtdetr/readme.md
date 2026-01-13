@@ -1,10 +1,10 @@
-# DETRs Beat YOLOs on Real-time Object Detection
+# DETR 在实时目标检测中击败 YOLO
 
-## Introduction
-This repository is the official pytorch implementation of [*RTDETR*](https://arxiv.org/abs/2304.08069v1), and is compatiable with [RT-DETR/rtdetr_pytorch](https://github.com/lyuwenyu/RT-DETR/tree/main). For paddle version implementation, please refer to [RT-DETR/rtdetr_paddle](https://github.com/lyuwenyu/RT-DETR/tree/main). **If you are using rtdetr for the first time, it is highly recommended to use [rtdetrv2](../rtdetrv2/)**.
+## 简介
+本仓库是 [*RTDETR*](https://arxiv.org/abs/2304.08069v1) 的官方 PyTorch 实现，并与 [RT-DETR/rtdetr_pytorch](https://github.com/lyuwenyu/RT-DETR/tree/main) 兼容。Paddle 版本实现请参考 [RT-DETR/rtdetr_paddle](https://github.com/lyuwenyu/RT-DETR/tree/main)。**如果您是初次使用 RTDETR，强烈建议使用 [rtdetrv2](../rtdetrv2/)**。
 
 <details open>
-<summary> Fig </summary>
+<summary> 图示 </summary>
 <div align="center">
   <img src="https://github.com/lyuwenyu/RT-DETR/assets/17582080/42636690-1ecf-4647-b075-842ecb9bc562" width=500>
 </div>
@@ -16,7 +16,7 @@ This repository is the official pytorch implementation of [*RTDETR*](https://arx
 </div> -->
 
 
-## Model Zoo
+## 模型库
 | Model | Dataset | Input Size | AP<sup>val</sup> | AP<sub>50</sub><sup>val</sup> | #Params(M) | FPS |  checkpoint |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 rtdetr_r18vd | COCO | 640 | 46.4 | 63.7 | 20 | 217 | [url<sup>*</sup>](https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetr_r18vd_dec3_6x_coco_from_paddle.pth)
@@ -34,46 +34,46 @@ rtdetr_r101vd | COCO+Objects365 | 640 | 56.2 | 74.5 | 76 | 74 | [url<sup>*</sup>
 rtdetr_r50vd | Objects365 | 640 | 35.1 | 46.2 | - | [url<sup>*</sup>](https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetr_r50vd_2x_coco_objects365_from_paddle.pth)
 rtdetr_r101vd | Objects365 | 640 | 36.8 | 48.3 | - | [url<sup>*</sup>](https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetr_r101vd_2x_coco_objects365_from_paddle.pth) -->
 
-Notes
+注意
 <!-- - AP is evaluated on coco 2017 val dataset -->
 <!-- RT-DETR was trained on COCO train2017 and evaluated on val2017. -->
-- `COCO + Objects365` in the table means finetuned model on `COCO` using pretrained weights trained on `Objects365`.
-- `FPS` is evaluated on a single T4 GPU with $batch\\_size = 1$ and $tensorrt\\_fp16$ mode
-- `url`<sup>`*`</sup> is the url of the pretrained weights, converted from the paddle model to save energy. *There may be slight differences between this table and the paper.
+- 表格中的 `COCO + Objects365` 表示模型在 `Objects365` 上预训练的权重基础上，使用 `COCO` 进行微调。
+- `FPS` 是在单张 T4 GPU 上测得的，使用 $batch\\_size = 1$ 和 $tensorrt\\_fp16$ 模式。
+- `url`<sup>`*`</sup> 是预训练权重的链接，为了节能，这些权重是从 Paddle 模型转换而来的。*本表格数据可能与论文略有差异。
 
 
-## Usage
+## 使用方法
 <details>
-<summary> details </summary>
+<summary> 详情 </summary>
 
 <!-- <summary>1. Training </summary> -->
-1. Training
+1. 训练
 ```shell
 CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --master_port=9909 --nproc_per_node=4 tools/train.py -c path/to/config &> log.txt 2>&1 &
 ```
 
 <!-- <summary>2. Testing </summary> -->
-2. Testing
+2. 测试
 ```shell
 CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --master_port=9909 --nproc_per_node=4 tools/train.py -c path/to/config -r path/to/checkpoint --test-only
 ```
 
 <!-- <summary>3. Tuning </summary> -->
-3. Tuning
+3. 微调 (Tuning)
 ```shell
 CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --master_port=9909 --nproc_per_node=4 tools/train.py -c path/to/config -t path/to/checkpoint &> log.txt 2>&1 &
 ```
 
 <!-- <summary>4. Export onnx </summary> -->
-4. Export onnx
+4. 导出 ONNX
 ```shell
 python tools/export_onnx.py -c path/to/config -r path/to/checkpoint --check
 ```
 
 <!-- <summary>5. Inference </summary> -->
-5. Inference
+5. 推理 (Inference)
 
-Support torch, onnxruntime, tensorrt and openvino, see details in *references/deploy*
+支持 torch, onnxruntime, tensorrt 和 openvino，详见 *references/deploy*
 ```shell
 python references/deploy/rtdetrv2_onnx.py --onnx-file=model.onnx --im-file=xxxx
 python references/deploy/rtdetrv2_tensorrt.py --trt-file=model.trt --im-file=xxxx
@@ -82,8 +82,8 @@ python references/deploy/rtdetrv2_torch.py -c path/to/config -r path/to/checkpoi
 </details>
 
 
-## Citation
-If you use `RTDETR` in your work, please use the following BibTeX entries:
+## 引用
+如果您在工作中使用了 `RTDETR`，请使用以下 BibTeX 条目：
 
 <details>
 <summary> bibtex </summary>
