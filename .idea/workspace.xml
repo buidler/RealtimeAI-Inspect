@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="66bd7b2b-822c-4b70-b37e-0b6487827c62" name="更改" comment="可视化训练结果+参数优化+余弦退火+纤维边缘轮廓绘制初步尝试" />
+    <list default="true" id="66bd7b2b-822c-4b70-b37e-0b6487827c62" name="更改" comment="工作空间完善" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -150,7 +150,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768494048519</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="工作空间完善">
+      <option name="closed" value="true" />
+      <created>1768915176818</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1768915176818</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -162,7 +170,8 @@
     <MESSAGE value="运行环境优化" />
     <MESSAGE value="翻译为中文版" />
     <MESSAGE value="可视化训练结果+参数优化+余弦退火+纤维边缘轮廓绘制初步尝试" />
-    <option name="LAST_COMMIT_MESSAGE" value="可视化训练结果+参数优化+余弦退火+纤维边缘轮廓绘制初步尝试" />
+    <MESSAGE value="工作空间完善" />
+    <option name="LAST_COMMIT_MESSAGE" value="工作空间完善" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

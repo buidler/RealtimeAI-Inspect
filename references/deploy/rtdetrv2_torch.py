@@ -55,7 +55,7 @@ def _binary_mask_from_crop(crop):
 
 
 def _contours_from_box(im, box):
-    # 在整图坐标系下，根据单个检测框提取前景连通域并拟合凸包轮廓点集
+    # 在整图坐标系下，根据单个检测框提取前景连通域并提取贴合边界的轮廓点集
     x0, y0, x1, y1 = [int(v) for v in box]
     w, h = im.size
     x0 = max(0, min(x0, w - 1))
@@ -69,18 +69,20 @@ def _contours_from_box(im, box):
     labeled, num = ndimage.label(mask)
     contours = []
     for label_id in range(1, num + 1):
-        ys, xs = np.nonzero(labeled == label_id)
-        if ys.size < 10:
+        region = labeled == label_id
+        eroded = ndimage.binary_erosion(region, structure=np.ones((3, 3)))
+        boundary = region & ~eroded
+        ys, xs = np.nonzero(boundary)
+        if ys.size < 20:
             continue
-        points = np.stack([xs, ys], axis=1).astype(np.float32)
-        try:
-            hull = spatial.ConvexHull(points)
-        except Exception:
-            continue
-        hull_pts = points[hull.vertices]
-        hull_pts[:, 0] += x0
-        hull_pts[:, 1] += y0
-        contours.append(hull_pts.tolist())
+        pts = np.stack([xs, ys], axis=1).astype(np.float32)
+        center = pts.mean(axis=0)
+        angles = np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0])
+        order = np.argsort(angles)
+        ordered = pts[order]
+        ordered[:, 0] += x0
+        ordered[:, 1] += y0
+        contours.append(ordered.tolist())
     return contours
 
 
@@ -102,9 +104,10 @@ def draw(images, labels, boxes, scores, thrh=0.6, draw_contours=False, save_dir=
             if draw_contours:
                 contour_list = _contours_from_box(im, b)
                 for pts in contour_list:
-                    pts_seq = [tuple(p) for p in pts]
-                    if len(pts_seq) > 1:
-                        drawer.line(pts_seq + [pts_seq[0]], fill="yellow", width=2)
+                    if len(pts) < 3:
+                        continue
+                    pts_seq = [(float(p[0]), float(p[1])) for p in pts]
+                    drawer.line(pts_seq + [pts_seq[0]], fill="yellow", width=2)
 
         # 如果未显式指定保存目录，则默认使用当前目录
         if save_dir is None:
