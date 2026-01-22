@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/RealTime-Transformer-for-Industrial-Inspection-main.iml" filepath="$PROJECT_DIR$/.idea/RealTime-Transformer-for-Industrial-Inspection-main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/RealtimeAI-Inspect.iml" filepath="$PROJECT_DIR$/.idea/RealtimeAI-Inspect.iml" />
     </modules>
   </component>
 </project>
