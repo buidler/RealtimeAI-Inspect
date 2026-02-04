@@ -1,0 +1,89 @@
+__include__: [
+  '../../configs/dataset/my_dataset.yml',   # 数据集与类别配置
+  '../runtime.yml',                         # 通用运行参数（日志频率、保存频率等）
+  './include/dataloader.yml',               # 默认数据加载与数据增强配置
+  './include/optimizer.yml',                # 默认优化器与学习率配置
+  './include/rtdetrv2_r50vd.yml',           # 模型结构（RT-DETRv2 + ResNet50 骨干）
+]
+
+# 训练结果输出目录（最终目录会在 train.py 中自动追加递增后缀，防止覆盖）
+output_dir: ./output/rtdetrv2_fiber
+
+# 总训练轮数（epochs），可以根据数据规模和收敛情况适当增减
+epoches: 96
+
+# -----------------------------------------------------------------
+# 针对 RTX 5060Ti 16GB 显存和纤维横截面识别任务的优化配置
+# -----------------------------------------------------------------
+
+# 1. 学习率设置
+# 默认配置通常针对 batch_size=16 设置 lr=0.0001
+# 如果显存受限使用了较小的 batch_size，建议按比例降低学习率
+# 例如: batch_size=8 -> lr=0.00005
+optimizer:
+  # 基础学习率；此处针对 batch_size=8 进行适当减小
+  # 根据 rtdetrv2_fiber_3 的训练情况，mAP 在 80+ epoch 后仍有缓慢提升，
+  # 说明当前学习率略偏大但未明显过拟合，这里略微下调以获得更平滑的高精度收敛
+  lr: 0.00004   # 如果后续改成 batch_size=16，可考虑恢复到 0.0001
+
+lr_scheduler:
+  type: CosineAnnealingLR   # 采用余弦退火策略平滑降低学习率
+  T_max: 96                 # 一个完整余弦周期，对齐总训练轮数
+  # 为了在后期有更细腻的步长，这里将最小学习率略微降低
+  eta_min: 0.0000005        # 退火到的最小学习率，进一步加强最后阶段的微调
+
+# 2. 数据加载与增强配置
+train_dataloader: 
+  # 训练数据加载相关配置
+  # 显存 16GB 对于 R50 模型，Batch Size 设置为 8 是比较安全且高效的选择
+  # 如果显存允许，可以尝试增加到 12 或 16
+  total_batch_size: 8   # 全局 batch size（单卡等于每卡 batch size，多卡会在内部均分）
+  
+  dataset: 
+    transforms:
+      # 3. 动态数据增强 (Dynamic Data Augmentation)
+      # 这里的 ops 列表定义了训练时的增强管道
+      ops:
+        # 添加 Mosaic 增强（类似 YOLO 的拼接增强，对小目标检测有帮助）
+        - {type: Mosaic, size: 640}
+        
+        # 原始增强策略
+        - {type: RandomPhotometricDistort, p: 0.5}
+        - {type: RandomZoomOut, fill: 0}
+        - {type: RandomIoUCrop, p: 0.8}
+        - {type: SanitizeBoundingBoxes, min_size: 1}
+        - {type: RandomHorizontalFlip}
+        
+        # 分辨率设置：默认为 640x640。
+        # 如果纤维截面非常小，可以尝试调大此数值 (e.g., [800, 800])，
+        # 但这会显著增加显存占用，可能需要进一步降低 batch_size。
+        - {type: Resize, size: [640, 640], }
+        
+        - {type: SanitizeBoundingBoxes, min_size: 1}
+        - {type: ConvertPILImage, dtype: 'float32', scale: True}   
+        - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
+      
+      # 训练策略：在最后若干 epoch 关闭强增强（如 Mosaic），进行精细微调
+      policy:
+        name: stop_epoch
+        # rtdetrv2_fiber_3 中 60~96 epoch mAP 仍在缓慢上涨，
+        # 为了更突出高精度微调，将强增强关闭时间略微提前
+        epoch: 60   # 从该 epoch 之后不再应用下面列出的增强操作
+        ops: ['Mosaic', 'RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop']
+
+  # 多尺度训练设置
+  collate_fn:
+    type: BatchImageCollateFunction
+    # 动态分辨率范围，从 480 到 800，步长 32
+    scales: [480, 512, 544, 576, 608, 640, 640, 640, 672, 704, 736, 768, 800]
+    # 为了让模型更早在稳定分辨率上做高精度微调，多尺度关闭时间与增强策略保持一致
+    stop_epoch: 60   # 到该 epoch 后固定使用最后一次采样到的分辨率（关闭多尺度）
+
+val_dataloader:
+  # 验证集数据加载配置（不回传梯度，可以使用更大的 batch_size）
+  total_batch_size: 16   # 验证集不计算梯度，可以设置更大的 batch size
+  dataset: 
+    transforms:
+      ops: 
+        - {type: Resize, size: [640, 640]}
+        - {type: ConvertPILImage, dtype: 'float32', scale: True}   

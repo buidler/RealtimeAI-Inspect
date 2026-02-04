@@ -1,0 +1,39 @@
+
+use_amp: True   # 是否使用混合精度训练（AMP），提高训练速度并节省显存
+use_ema: True   # 是否启用 EMA（指数滑动平均），有助于提升验证稳定性
+ema:
+  type: ModelEMA  # EMA 模型类型
+  decay: 0.9999   # EMA 衰减系数，越接近 1 表示更新越平滑
+  warmups: 2000   # EMA 启动前的 warmup 步数
+
+
+epoches: 72       # 默认总训练轮数，如果在主配置中未覆盖则使用此值
+clip_max_norm: 0.1  # 梯度裁剪上限，防止梯度爆炸
+
+
+optimizer:
+  type: AdamW   # 使用 AdamW 优化器，适合 Transformer / 检测类模型
+  params: 
+    - 
+      # 为 backbone 非 norm 类参数单独设置较小学习率，防止预训练骨干被破坏
+      params: '^(?=.*backbone)(?!.*norm).*$'
+      lr: 0.00001
+    - 
+      # 编码器 / 解码器中的 BN / Norm 层不做权重衰减，避免数值被拉偏
+      params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bn)).*$'
+      weight_decay: 0.
+
+  lr: 0.0001                 # 默认基础学习率（通常对应 batch_size=16）
+  betas: [0.9, 0.999]        # AdamW 的一阶、二阶动量系数
+  weight_decay: 0.0001       # 全局权重衰减，防止过拟合
+
+
+lr_scheduler:
+  type: CosineAnnealingLR  # 余弦退火学习率调度器
+  T_max: 72                # 余弦周期长度，通常与总 epoch 数保持一致
+  eta_min: 0.0             # 学习率下限（退火到的最小值）
+
+
+lr_warmup_scheduler:
+  type: LinearWarmup      # 线性 warmup 调度器，在训练初期平滑升高学习率
+  warmup_duration: 2000   # warmup 持续步数，过小可能不稳定，过大会减慢收敛
