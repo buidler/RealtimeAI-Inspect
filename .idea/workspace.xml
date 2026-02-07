@@ -1,120 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a6109a06-5a4d-4f3a-8e9c-0c1713bf0a6c" name="更改" comment="更改项目目录结构">
-      <change beforePath="$PROJECT_DIR$/.idea/RealtimeAI-Inspect.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/RealtimeAI-Inspect.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/include/dataloader.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/include/optimizer.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/include/rtdetr_r50vd.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/readme.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/rtdetr_r101vd_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/rtdetr_r18vd_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/rtdetr_r34vd_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/rtdetr_r50vd_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetr/rtdetr_r50vd_m_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/include/dataloader.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/include/optimizer.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/include/rtdetrv2_r50vd.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_fiber.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_hgnetv2_h_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_hgnetv2_l_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_hgnetv2_x_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r101vd_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r18vd_120e_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r18vd_120e_voc.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r18vd_dsp_3x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r18vd_sp1_120e_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r18vd_sp2_120e_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r18vd_sp3_120e_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r34vd_120e_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r34vd_dsp_1x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r50vd_6x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r50vd_dsp_1x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r50vd_m_7x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/rtdetrv2/rtdetrv2_r50vd_m_dsp_3x_coco.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/configs/runtime.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/docker-compose.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/references/deploy/readme.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/references/deploy/rtdetrv2_onnxruntime.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/references/deploy/rtdetrv2_openvino.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/references/deploy/rtdetrv2_tensorrt.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/references/deploy/rtdetrv2_torch.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/requirements.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/core/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/core/_config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/core/workspace.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/core/yaml_config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/core/yaml_utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/box_ops.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/dist_utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/lazy_loader.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/logger.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/profiler_utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/misc/visualizer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/arch/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/arch/classification.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/arch/yolo.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/common.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/csp_darknet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/csp_resnet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/hgnetv2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/presnet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/test_resnet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/timm_model.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/torchvision_model.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/backbone/utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/criterion/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/criterion/det_criterion.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/postprocessor/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/postprocessor/box_revert.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/postprocessor/detr_postprocessor.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/nn/postprocessor/nms_postprocessor.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/optim/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/optim/amp.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/optim/ema.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/optim/optim.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/optim/warmup.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/solver/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/solver/_solver.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/solver/clas_engine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/solver/clas_solver.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/solver/det_engine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/solver/det_solver.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/box_ops.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/conver_params.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/denoising.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/hybrid_encoder.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/matcher.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/rtdetr.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/rtdetr_criterion.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/rtdetr_decoder.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/rtdetr_postprocessor.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/rtdetrv2_criterion.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/rtdetrv2_decoder.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/src/zoo/rtdetr/utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/check_dataset_overlap.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/clean_augmented_images.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/convert_yolo_to_coco.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/export_onnx.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/export_trt.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/gpuTest.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/onnx2trt.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/run_profile.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/train.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReDETR v2/tools/visualize_training_results.py" beforeDir="false" />
-    </list>
+    <list default="true" id="a6109a06-5a4d-4f3a-8e9c-0c1713bf0a6c" name="更改" comment="null" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -143,18 +30,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/zjy/code/RealtimeAI-Inspect",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/zjy/code/RealtimeAI-Inspect&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -186,11 +73,29 @@
       <option name="project" value="LOCAL" />
       <updated>1769065494868</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="给REDetr增加HQ-SAM检测头，轮廓描绘精确度提高">
+      <option name="closed" value="true" />
+      <created>1770175922209</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1770175922209</updated>
+    </task>
+    <task id="LOCAL-00004" summary="null">
+      <option name="closed" value="true" />
+      <created>1770175961277</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1770175961277</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="更改项目目录结构" />
-    <option name="LAST_COMMIT_MESSAGE" value="更改项目目录结构" />
+    <MESSAGE value="给REDetr增加HQ-SAM检测头，轮廓描绘精确度提高" />
+    <MESSAGE value="null" />
+    <option name="LAST_COMMIT_MESSAGE" value="null" />
   </component>
 </project>
