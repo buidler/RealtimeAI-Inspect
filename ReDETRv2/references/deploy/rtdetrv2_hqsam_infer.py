@@ -64,6 +64,50 @@ def _binary_mask_from_crop(crop):
     return mask
 
 
+def _trace_boundary(boundary):
+    # 用 Moore 邻域边界跟踪，将离散边界像素按顺序连接成闭合轮廓
+    boundary = boundary.astype(bool)
+    ys, xs = np.nonzero(boundary)
+    if ys.size == 0:
+        return None
+    h, w = boundary.shape
+    start = (int(ys[0]), int(xs[0]))
+    contour = [start]
+    current = start
+    prev = (start[0], start[1] - 1)
+    dirs = [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1)]
+
+    def _dir_index(fr, to):
+        dy = to[0] - fr[0]
+        dx = to[1] - fr[1]
+        for i, (ddy, ddx) in enumerate(dirs):
+            if dy == ddy and dx == ddx:
+                return i
+        return 0
+
+    max_steps = int(boundary.sum() * 4 + 50)
+    steps = 0
+    while steps < max_steps:
+        steps += 1
+        dir_idx = _dir_index(current, prev)
+        found = False
+        for k in range(1, 9):
+            idx = (dir_idx + k) % 8
+            ny = current[0] + dirs[idx][0]
+            nx = current[1] + dirs[idx][1]
+            if 0 <= ny < h and 0 <= nx < w and boundary[ny, nx]:
+                prev = current
+                current = (ny, nx)
+                contour.append(current)
+                found = True
+                break
+        if not found:
+            break
+        if current == start and len(contour) > 10:
+            break
+    return contour
+
+
 def _contours_from_box(im, box, mask_hint=None):
     # 传统轮廓逻辑：在单个检测框内，根据二值掩膜提取连通域，
     # 只保留面积最大且靠近框中心的区域，然后提取其边界作为轮廓。
@@ -82,18 +126,16 @@ def _contours_from_box(im, box, mask_hint=None):
     mask = _binary_mask_from_crop(crop)
     if mask_hint is not None:
         hint_crop = mask_hint[y0:y1, x0:x1]
-        # 只在 HQ-SAM 掩膜内部、且靠近其边界的一圈窄带内保留传统分割结果
         if hint_crop.shape == mask.shape:
-            # 计算 HQ 掩膜的内部窄带：hq_band = hq_mask & ~erode(hq_mask)
-            # 这里 iterations=1 表示只向内收缩 1 个像素，得到相对“宽”的边缘带，
-            # 既能限制传统算法只在边缘附近工作，又尽量避免轮廓被截断得太短。
-            band = hint_crop.copy().astype(bool)
-            eroded = ndimage.binary_erosion(band, iterations=1)
-            band = band & ~eroded
-            if not band.any():
-                # 如果窄带被完全侵蚀掉，则退回到原始掩膜区域
-                band = hint_crop.astype(bool)
-            mask = mask & band
+            hint_crop = hint_crop.astype(bool)
+            orig_mask = mask.copy()
+            hint_eroded = ndimage.binary_erosion(hint_crop, structure=np.ones((3, 3)))
+            hint_boundary = hint_crop ^ hint_eroded
+            hint_band = ndimage.binary_dilation(hint_boundary, structure=np.ones((3, 3)), iterations=4)
+            mask = mask & hint_band
+            # 如果窄带约束后区域过小，则回退到未约束的原始传统掩膜
+            if mask.sum() < 0.05 * float(orig_mask.sum()):
+                mask = orig_mask
     labeled, num = ndimage.label(mask)
     contours = []
     if num == 0:
@@ -101,6 +143,7 @@ def _contours_from_box(im, box, mask_hint=None):
     h_crop, w_crop = mask.shape
     crop_center = np.array([0.5 * (w_crop - 1), 0.5 * (h_crop - 1)], dtype=np.float32)
     best_pts = None
+    best_boundary = None
     best_area = 0.0
     best_dist2 = None
     for label_id in range(1, num + 1):
@@ -108,7 +151,7 @@ def _contours_from_box(im, box, mask_hint=None):
         eroded = ndimage.binary_erosion(region, structure=np.ones((3, 3)))
         boundary = region & ~eroded
         ys, xs = np.nonzero(boundary)
-        if ys.size < 20:
+        if ys.size < 10:
             continue
         pts = np.stack([xs, ys], axis=1).astype(np.float32)
         area = float(region.sum())
@@ -118,13 +161,14 @@ def _contours_from_box(im, box, mask_hint=None):
             best_area = area
             best_dist2 = dist2
             best_pts = pts
+            best_boundary = boundary
     if best_pts is None:
         return contours
-    pts = best_pts
-    center = pts.mean(axis=0)
-    angles = np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0])
-    order = np.argsort(angles)
-    ordered = pts[order]
+    ordered = _trace_boundary(best_boundary)
+    if ordered is None or len(ordered) < 10:
+        return contours
+    # 将 (row, col) 转为 (x, y)
+    ordered = np.array([(float(p[1]), float(p[0])) for p in ordered], dtype=np.float32)
     ordered[:, 0] += x0
     ordered[:, 1] += y0
     pts_arr = ordered
@@ -136,7 +180,8 @@ def _contours_from_box(im, box, mask_hint=None):
             y1 - pts_arr[:, 1],
         ]
     )
-    if (dist_edge < 3.0).mean() > 0.7:
+    # 只有在纯传统模式下才用“贴框过滤”，混合模式下允许轮廓紧贴 HQ-SAM 外接框
+    if mask_hint is None and (dist_edge < 3.0).mean() > 0.9:
         return contours
     contours.append(pts_arr.tolist())
     return contours
@@ -156,11 +201,11 @@ def _contour_from_hqsam_mask(mask, box, conservative_boundary=False):
     ys, xs = np.nonzero(boundary)
     if ys.size < 20:
         return None
-    pts = np.stack([xs, ys], axis=1).astype(np.float32)
-    center = pts.mean(axis=0)
-    angles = np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0])
-    order = np.argsort(angles)
-    ordered = pts[order]
+    ordered = _trace_boundary(boundary)
+    if ordered is None or len(ordered) < 20:
+        return None
+    # 将 (row, col) 转为 (x, y)
+    ordered = np.array([(float(p[1]), float(p[0])) for p in ordered], dtype=np.float32)
     x0, y0, x1, y1 = box
     pts_arr = ordered
     dist_edge = np.minimum.reduce(
@@ -194,7 +239,7 @@ def _select_best_hqsam_contour(masks, box, conservative_boundary=False):
     return best_pts, best_mask
 
 
-def _filter_traditional_contours_with_hqsam(trad_contours, hq_mask, image_size, min_overlap=0.10):
+def _filter_traditional_contours_with_hqsam(trad_contours, hq_mask, image_size, min_overlap=0.2):
     # 使用 HQ-SAM 的 mask 过滤传统轮廓：
     # 思路：把传统轮廓先 rasterize 成一个多边形区域 poly，再与 HQ 掩膜做交集，
     # 计算 overlap = (poly ∧ hq_mask) / poly，只有 overlap 足够大才认为传统轮廓可信。
@@ -341,6 +386,7 @@ def _run_inference(
                     box_for_trad = b_np
             else:
                 box_for_trad = b_np
+            # 让传统算法在 HQ-SAM 掩膜边缘的窄带内细化轮廓
             trad_contours = _contours_from_box(im_pil, box_for_trad, mask_hint=hq_mask)
             # 使用 HQ-SAM 掩膜过滤掉与 HQ 结果明显不一致的传统轮廓，避免出现大块色块和贴框伪轮廓
             trad_contours = _filter_traditional_contours_with_hqsam(trad_contours, hq_mask, im_pil.size)
@@ -353,12 +399,9 @@ def _run_inference(
         final_contours = []
         if use_hq_sam and use_traditional_contours:
             if trad_contours and hq_pts is not None:
-                # 传统轮廓存在且与 HQ 掩膜重合度已通过筛选时，
-                # 进一步要求其长度至少覆盖 HQ 轮廓的约 30%，
-                # 以避免只保留极短的一小段扇形导致轮廓明显缺失。
                 trad_len = _polyline_length(trad_contours[0])
                 hq_len = _polyline_length(hq_pts)
-                if hq_len > 0 and trad_len / hq_len >= 0.1:
+                if hq_len > 0 and trad_len / hq_len >= 0.15:
                     final_contours = trad_contours
                 else:
                     final_contours = [hq_pts]
@@ -430,4 +473,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
