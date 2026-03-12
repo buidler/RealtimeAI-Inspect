@@ -1,0 +1,145 @@
+warning: in the working copy of 'ReDETRv2/references/deploy/rtdetrv2_hqsam_infer.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/ReDETRv2/references/deploy/rtdetrv2_hqsam_infer.py b/ReDETRv2/references/deploy/rtdetrv2_hqsam_infer.py[m
+[1mindex f68443d..7fe35ae 100644[m
+[1m--- a/ReDETRv2/references/deploy/rtdetrv2_hqsam_infer.py[m
+[1m+++ b/ReDETRv2/references/deploy/rtdetrv2_hqsam_infer.py[m
+[36m@@ -28,6 +28,7 @@[m [mfrom segment_anything_hq import sam_model_registry, SamPredictor[m
+ [m
+ # ReDETRv2 的配置封装类，通过 YAMLConfig 构建模型和后处理器[m
+ from src.core import YAMLConfig[m
+[32m+[m[32mfrom src.misc.boundary_head import load_boundary_head[m
+ [m
+ [m
+ def _binary_mask_from_crop(crop):[m
+[36m@@ -275,6 +276,59 @@[m [mdef _polyline_length(pts):[m
+     return float(seg_len.sum())[m
+ [m
+ [m
+[32m+[m[32mdef _filter_long_thin_contours(contours, box, min_area_ratio=0.02, max_aspect=8.0):[m
+[32m+[m[32m    # 过滤掉长而窄、面积很小的轮廓：[m
+[32m+[m[32m    # 思路：计算轮廓外接矩形与当前检测框的面积比 area_ratio，[m
+[32m+[m[32m    # 同时计算外接矩形的长宽比 aspect。[m
+[32m+[m[32m    # 当 area_ratio 很小且 aspect 很大时，认为是“细长伪轮廓”（如切割刀痕），丢弃。[m
+[32m+[m[32m    if not contours:[m
+[32m+[m[32m        return contours[m
+[32m+[m[32m    x0, y0, x1, y1 = [float(v) for v in box][m
+[32m+[m[32m    box_w = max(x1 - x0, 1.0)[m
+[32m+[m[32m    box_h = max(y1 - y0, 1.0)[m
+[32m+[m[32m    box_area = box_w * box_h[m
+[32m+[m[32m    cx = x0 + 0.5 * box_w[m
+[32m+[m[32m    cy = y0 + 0.5 * box_h[m
+[32m+[m[32m    filtered = [][m
+[32m+[m[32m    for pts in contours:[m
+[32m+[m[32m        if pts is None or len(pts) < 3:[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        arr = np.asarray(pts, dtype=np.float32)[m
+[32m+[m[32m        min_x, max_x = float(arr[:, 0].min()), float(arr[:, 0].max())[m
+[32m+[m[32m        min_y, max_y = float(arr[:, 1].min()), float(arr[:, 1].max())[m
+[32m+[m[32m        w = max_x - min_x + 1.0[m
+[32m+[m[32m        h = max_y - min_y + 1.0[m
+[32m+[m[32m        area_bbox = w * h[m
+[32m+[m[32m        area_ratio = area_bbox / box_area[m
+[32m+[m[32m        aspect = max(w, h) / max(1.0, min(w, h))[m
+[32m+[m[32m        mx = float(arr[:, 0].mean())[m
+[32m+[m[32m        my = float(arr[:, 1].mean())[m
+[32m+[m[32m        center_close = (abs(mx - cx) < 0.25 * box_w) and (abs(my - cy) < 0.25 * box_h)[m
+[32m+[m[32m        if aspect > max_aspect and (area_ratio < min_area_ratio or center_close):[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        filtered.append(pts)[m
+[32m+[m[32m    return filtered[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef _is_edge_hugging(pts, box, thr=3.0, frac=0.9):[m
+[32m+[m[32m    # 判断一条轮廓是否“大部分点都贴在检测框边缘”：[m
+[32m+[m[32m    # 计算每个点到检测框四条边的最小距离 dist_edge，[m
+[32m+[m[32m    # 若 dist_edge 小于 thr 的比例超过 frac，则认为该轮廓是贴框的。[m
+[32m+[m[32m    if pts is None or len(pts) < 3:[m
+[32m+[m[32m        return False[m
+[32m+[m[32m    arr = np.asarray(pts, dtype=np.float32)[m
+[32m+[m[32m    x0, y0, x1, y1 = [float(v) for v in box][m
+[32m+[m[32m    dist_edge = np.minimum.reduce([m
+[32m+[m[32m        [[m
+[32m+[m[32m            arr[:, 0] - x0,[m
+[32m+[m[32m            arr[:, 1] - y0,[m
+[32m+[m[32m            x1 - arr[:, 0],[m
+[32m+[m[32m            y1 - arr[:, 1],[m
+[32m+[m[32m        ][m
+[32m+[m[32m    )[m
+[32m+[m[32m    return (dist_edge < thr).mean() > frac[m
+[32m+[m
+[32m+[m
+ def _build_rtdetr_model(config_path, ckpt_path, device):[m
+     # 根据 YAML 配置和训练权重构建部署版 RT-DETRv2 模型（含后处理），[m
+     # 输出已经过后处理的 (labels, boxes, scores)，坐标均在原图尺度。[m
+[36m@@ -314,10 +368,12 @@[m [mdef _run_inference([m
+     use_traditional_contours,[m
+     save_dir,[m
+     conservative_boundary,[m
+[32m+[m[32m    boundary_head_ckpt=None,[m
+ ):[m
+     # 1. 构建 RT-DETRv2 部署模型（只做前向推理，不参与训练和反向传播）[m
+     device = torch.device(device)[m
+     model = _build_rtdetr_model(config_path, ckpt_path, device)[m
+[32m+[m[32m    model.eval()[m
+     # 2. 读入待推理图像，并转换为张量（缩放到 640x640 送入 RT-DETRv2）[m
+     im_pil = Image.open(image_path).convert("RGB")[m
+     w, h = im_pil.size[m
+[36m@@ -342,6 +398,7 @@[m [mdef _run_inference([m
+     lab = lab[keep][m
+     box = box[keep][m
+     predictor = None[m
+[32m+[m[32m    boundary_head = None[m
+     # 5. 如果启用 HQ-SAM，则加载 HQ-SAM 模型并对整张图像进行编码，[m
+     #    后续每个检测框直接作为 box prompt 调用 predictor.predict。[m
+     if use_hq_sam:[m
+[36m@@ -349,9 +406,63 @@[m [mdef _run_inference([m
+             raise ValueError("hq_sam_checkpoint is required when use_hq_sam is True")[m
+         sam = sam_model_registry[hq_sam_model_type](checkpoint=hq_sam_checkpoint)[m
+         sam.to(device=device)[m
+[32m+[m[32m        sam.eval()[m
+         predictor = SamPredictor(sam)[m
+         image_np = np.array(im_pil)[m
+         predictor.set_image(image_np)[m
+[32m+[m[32m    else:[m
+[32m+[m[32m        image_np = np.array(im_pil)[m
+[32m+[m
+[32m+[m[32m    if boundary_head_ckpt is not None:[m
+[32m+[m[32m        # 可选加载边界质量打分头：[m
+[32m+[m[32m        # 若未提供权重路径，则后续混合决策退回到纯几何规则。[m
+[32m+[m[32m        boundary_head = load_boundary_head(boundary_head_ckpt, device)[m
+[32m+[m[32m        boundary_head.eval()[m
+[32m+[m
+[32m+[m[32m    def _score_contour_with_head(pts, hq_mask_local, trad_mask_local, head):[m
+[32m+[m[32m        # 对一条轮廓按点采样局部 patch（RGB + HQ 掩膜 + 传统掩膜），[m
+[32m+[m[32m        # 用 boundary head 输出每个 patch 的“真边界”概率，并取平均作为该轮廓得分。[m
+[32m+[m[32m        if head is None or pts is None or len(pts) < 3:[m
+[32m+[m[32m            return None[m
+[32m+[m[32m        pts_arr = np.asarray(pts, dtype=np.float32)[m
+[32m+[m[32m        num_samples = min(16, len(pts_arr))[m
+[32m+[m[32m        idx = np.linspace(0, len(pts_arr) - 1, num_samples).astype(int)[m
+[32m+[m[32m        samples = pts_arr[idx][m
+[32m+[m[32m        H, W, _ = image_np.shape[m
+[32m+[m[32m        patch_size = 64[m
+[32m+[m[32m        half = patch_size // 2[m
+[32m+[m[32m        patches = [][m
+[32m+[m[32m        for x, y in samples:[m
+[32m+[m[32m            x, y = int(x), int(y)[m
+[32m+[m[32m            x0 = max(0, x - half)[m
+[32m+[m[32m            y0 = max(0, y - half)[m
+[32m+[m[32m            x1 = min(W, x + half)[m
+[32m+[m[32m            y1 = min(H, y + half)[m
+[32m+[m[32m            rgb = image_np[y0:y1, x0:x1, :][m
+[32m+[m[32m            hq = hq_mask_local[y0:y1, x0:x1] if hq_mask_local is not None else np.zeros((y1 - y0, x1 - x0), dtype=np.uint8)[m
+[32m+[m[32m            trad = trad_mask_local[y0:y1, x0:x1] if trad_mask_local is not None else np.zeros((y1 - y0, x1 - x0), dtype=np.uint8)[m
+[32m+[m[32m            ph = y1 - y0[m
+[32m+[m[32m            pw = x1 - x0[m
+[32m+[m[32m            if ph == 0 or pw == 0:[m
+[32m+[m[32m                continue[m
+[32m+[m[32m            pad_rgb = np.zeros((patch_size, patch_size, 3), dtype=rgb.dtype)[m
+[32m+[m[32m            pad_hq = np.zeros((patch_size, patch_size), dtype=hq.dtype)[m
+[32m+[m[32m            pad_trad = np.zeros((patch_size, patch_size), dtype=trad.dtype)[m
+[32m+[m[32m            pad_rgb[:ph, :pw, :] = rgb[m
+[32m+[m[32m            pad_hq[:ph, :pw] = hq[m
+[32m+[m[32m            pad_trad[:ph, :pw] = trad[m
+[32m+[m[32m            rgb_t = torch.from_numpy(pad_rgb.transpose(2, 0, 1)).float() / 255.0[m
+[32m+[m[32m            

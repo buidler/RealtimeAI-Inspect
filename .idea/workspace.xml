@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a6109a06-5a4d-4f3a-8e9c-0c1713bf0a6c" name="更改" comment="" />
+    <list default="true" id="a6109a06-5a4d-4f3a-8e9c-0c1713bf0a6c" name="更改" comment="1. 轮廓本身：从“散点 + 角度排序”变成“边界跟踪”&#10;2.传统算法只在 HQ-SAM 边缘附近细化 + 容错回退&#10;3. HQ 掩膜过滤传统轮廓：阈值放宽 + 再次兜底&#10;4.最终混合策略：传统优先，HQ 兜底&#10;存在问题：1.切割刀痕被当成轮廓2.极少数轮廓贴着检测框3.sam的整体视觉消失，重叠的检测框紧邻的纤维出现边界错误" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -89,13 +89,22 @@
       <option name="project" value="LOCAL" />
       <updated>1770175961277</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="1. 轮廓本身：从“散点 + 角度排序”变成“边界跟踪”&#10;2.传统算法只在 HQ-SAM 边缘附近细化 + 容错回退&#10;3. HQ 掩膜过滤传统轮廓：阈值放宽 + 再次兜底&#10;4.最终混合策略：传统优先，HQ 兜底&#10;存在问题：1.切割刀痕被当成轮廓2.极少数轮廓贴着检测框3.sam的整体视觉消失，重叠的检测框紧邻的纤维出现边界错误">
+      <option name="closed" value="true" />
+      <created>1772601875033</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1772601875033</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="更改项目目录结构" />
     <MESSAGE value="给REDetr增加HQ-SAM检测头，轮廓描绘精确度提高" />
     <MESSAGE value="null" />
-    <option name="LAST_COMMIT_MESSAGE" value="null" />
+    <MESSAGE value="1. 轮廓本身：从“散点 + 角度排序”变成“边界跟踪”&#10;2.传统算法只在 HQ-SAM 边缘附近细化 + 容错回退&#10;3. HQ 掩膜过滤传统轮廓：阈值放宽 + 再次兜底&#10;4.最终混合策略：传统优先，HQ 兜底&#10;存在问题：1.切割刀痕被当成轮廓2.极少数轮廓贴着检测框3.sam的整体视觉消失，重叠的检测框紧邻的纤维出现边界错误" />
+    <option name="LAST_COMMIT_MESSAGE" value="1. 轮廓本身：从“散点 + 角度排序”变成“边界跟踪”&#10;2.传统算法只在 HQ-SAM 边缘附近细化 + 容错回退&#10;3. HQ 掩膜过滤传统轮廓：阈值放宽 + 再次兜底&#10;4.最终混合策略：传统优先，HQ 兜底&#10;存在问题：1.切割刀痕被当成轮廓2.极少数轮廓贴着检测框3.sam的整体视觉消失，重叠的检测框紧邻的纤维出现边界错误" />
   </component>
 </project>
