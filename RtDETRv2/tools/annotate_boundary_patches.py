@@ -1,5 +1,6 @@
 import argparse
 import csv
+import json
 import shutil
 from pathlib import Path
 
@@ -8,7 +9,8 @@ import numpy as np
 
 
 def read_rows(csv_path: Path):
-    # 读取整份 CSV 到内存，便于交互式修改后统一回写
+    if not csv_path.exists():
+        raise FileNotFoundError(f"csv not found: {csv_path}")
     with csv_path.open("r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
@@ -17,7 +19,6 @@ def read_rows(csv_path: Path):
 
 
 def write_rows(csv_path: Path, headers, rows):
-    # 将更新后的标注结果覆盖写回原 CSV
     with csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
@@ -25,7 +26,6 @@ def write_rows(csv_path: Path, headers, rows):
 
 
 def to_int_label(v):
-    # 容错解析标签，非法值统一按 -1 处理
     try:
         return int(v)
     except Exception:
@@ -33,7 +33,6 @@ def to_int_label(v):
 
 
 def resolve_path(raw_path: str, csv_path: Path, workspace_root: Path):
-    # 兼容绝对路径、相对 CSV 路径、相对工作区路径三种写法
     p = Path(raw_path)
     candidates = [p, csv_path.parent / p, workspace_root / p]
     for c in candidates:
@@ -43,7 +42,6 @@ def resolve_path(raw_path: str, csv_path: Path, workspace_root: Path):
 
 
 def load_patch_rgb(npz_path: Path):
-    # 从 npz 提取前三个通道作为 RGB patch 预览
     if not npz_path.exists():
         return np.zeros((256, 256, 3), dtype=np.uint8)
     data = np.load(npz_path)["patch"].astype(np.float32)
@@ -56,7 +54,6 @@ def load_patch_rgb(npz_path: Path):
 
 
 def fit_height(image: np.ndarray, target_h: int):
-    # 按高度等比缩放，便于原图与 patch 拼接展示
     h, w = image.shape[:2]
     if h == target_h:
         return image
@@ -66,7 +63,6 @@ def fit_height(image: np.ndarray, target_h: int):
 
 
 def fit_to_box(image: np.ndarray, max_w: int, max_h: int):
-    # 将最终面板限制在指定最大宽高内，并返回缩放比例用于同步按钮坐标
     h, w = image.shape[:2]
     scale = min(max_w / float(w), max_h / float(h), 1.0)
     if scale >= 1.0:
@@ -77,7 +73,6 @@ def fit_to_box(image: np.ndarray, max_w: int, max_h: int):
 
 
 def crop_local_view(image_bgr: np.ndarray, x: int, y: int, local_window_size: int, local_zoom_size: int):
-    # 以 (x, y) 为中心裁剪局部区域，再放大成固定显示尺寸
     h, w = image_bgr.shape[:2]
     half = max(1, local_window_size // 2)
     x0 = max(0, x - half)
@@ -98,7 +93,6 @@ def crop_local_view(image_bgr: np.ndarray, x: int, y: int, local_window_size: in
 
 
 def draw_zoom_buttons(canvas: np.ndarray):
-    # 在顶部绘制四个倍率按钮：左图缩小/放大、右图缩小/放大
     h, w = canvas.shape[:2]
     y1 = 10
     y2 = min(50, h - 1)
@@ -135,7 +129,6 @@ def build_panel(
     left_zoom_mult: float,
     right_zoom_mult: float,
 ):
-    # 构建可视化面板：左侧图、右侧图、状态文字与可点击按钮
     image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
     patch_bgr = cv2.cvtColor(patch_rgb, cv2.COLOR_RGB2BGR)
 
@@ -143,10 +136,8 @@ def build_panel(
     y = int(float(row["y"]))
     cv2.circle(image_bgr, (x, y), 22, (0, 0, 255), 3, lineType=cv2.LINE_AA)
     cv2.circle(image_bgr, (x, y), 3, (0, 255, 255), -1, lineType=cv2.LINE_AA)
-    # 右图倍率越大，实际裁剪窗口越小，看起来更“放大”
     right_window_size = max(1, int(local_window_size / max(1e-6, right_zoom_mult)))
     local_bgr = crop_local_view(image_bgr, x, y, right_window_size, local_zoom_size)
-    # 左图的局部窗口还会额外乘上 left_less_zoom_times，使左图相对右图更“少放大”
     left_local_window_size = max(1, int(local_window_size * max(1.0, left_less_zoom_times) / max(1e-6, left_zoom_mult)))
     left_local_bgr = crop_local_view(image_bgr, x, y, left_local_window_size, local_zoom_size)
 
@@ -162,7 +153,6 @@ def build_panel(
     right_bgr = fit_height(right_bgr, image_bgr.shape[0])
 
     canvas = np.hstack([image_bgr, right_bgr])
-    h = canvas.shape[0]
     bar_h = 130
     bar = np.full((bar_h, canvas.shape[1], 3), 20, dtype=np.uint8)
     canvas = np.vstack([bar, canvas])
@@ -181,7 +171,6 @@ def build_panel(
 
     canvas, scale = fit_to_box(canvas, view_max_w, view_max_h)
     if scale != 1.0:
-        # 面板缩放后，同步缩放按钮点击区域坐标，保证点击命中正确
         scaled = {}
         for k, (x1, y1, x2, y2) in buttons.items():
             scaled[k] = (
@@ -195,7 +184,6 @@ def build_panel(
 
 
 def summarize_labels(rows):
-    # 统计 0/1/-1 分布并给出下次标注建议
     n_pos = 0
     n_neg = 0
     n_unlabeled = 0
@@ -208,14 +196,12 @@ def summarize_labels(rows):
         else:
             n_unlabeled += 1
 
-    # ratio_text 表示 1:0 比例（当 0 类为 0 时显示 inf 或 N/A）
     ratio_text = "N/A"
     if n_neg > 0:
         ratio_text = f"{n_pos / n_neg:.3f}"
     elif n_pos > 0:
         ratio_text = "inf"
 
-    # 根据当前类别分布给出下一轮标注重点
     if n_pos == 0 and n_neg == 0:
         advice = "还没有 0/1 标注；下次先按 1:1 目标各标一批。"
     elif n_pos == 0:
@@ -252,24 +238,41 @@ def main():
     parser.add_argument("--local-window-size", type=int, default=220)
     parser.add_argument("--local-zoom-size", type=int, default=1000)
     parser.add_argument("--left-less-zoom-times", type=float, default=5.0)
+    parser.add_argument("--state-path", type=str, default="")
+    parser.add_argument("--disable-auto-resume", action="store_true")
     args = parser.parse_args()
 
     csv_path = Path(args.csv_path).resolve()
     workspace_root = Path(args.workspace_root).resolve()
     headers, rows = read_rows(csv_path)
-    # 约束输入 CSV 至少具备这些列，避免运行中出现 KeyError
+    state_path = Path(args.state_path).resolve() if args.state_path else (csv_path.parent / "annotate_state.json")
+    resume_row = None
+    if not args.disable_auto_resume and state_path.exists():
+        try:
+            with state_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and isinstance(data.get("next_row"), int):
+                resume_row = data["next_row"]
+        except Exception:
+            resume_row = None
+
+    def save_state(next_row: int):
+        if args.disable_auto_resume:
+            return
+        row = max(0, min(len(rows), int(next_row)))
+        with state_path.open("w", encoding="utf-8") as f:
+            json.dump({"next_row": row}, f, ensure_ascii=False)
+
     required = {"patch_path", "image_path", "x", "y", "label", "box_index", "point_index"}
     missing = required.difference(set(headers))
     if missing:
         raise RuntimeError(f"csv缺少字段: {sorted(missing)}")
 
     if not args.no_backup:
-        # 首次运行自动备份，避免误操作导致原标注丢失
         bak_path = csv_path.with_name(csv_path.name + ".bak")
         if not bak_path.exists():
             shutil.copy2(csv_path, bak_path)
 
-    # 默认仅处理未标注样本（label=-1）；传 --all 时遍历全部行
     only_unlabeled = not args.all
     targets = []
     for i, row in enumerate(rows):
@@ -280,6 +283,7 @@ def main():
             targets.append(i)
     if not targets:
         print("没有可标注的行。")
+        save_state(len(rows))
         n_pos, n_neg, n_unlabeled, ratio_text, advice = summarize_labels(rows)
         print(f"saved: {csv_path}")
         print(f"label_counts: {{1: {n_pos}, 0: {n_neg}, -1: {n_unlabeled}}}")
@@ -288,17 +292,18 @@ def main():
         return
 
     pos = 0
-    if args.start_row > 0:
-        # 将用户输入的行号映射到当前目标队列位置，支持从断点附近继续
+    effective_start_row = args.start_row if args.start_row > 0 else (resume_row if resume_row is not None else 0)
+    if effective_start_row > 0:
         found = None
         for j, idx in enumerate(targets):
-            if idx >= args.start_row:
+            if idx >= effective_start_row:
                 found = j
                 break
         if found is not None:
             pos = found
+    if pos < len(targets):
+        save_state(targets[pos])
 
-    # 每次点击按钮的倍率步进
     zoom_step = 2.5
     ui_state = {
         "buttons": {},
@@ -308,7 +313,6 @@ def main():
     }
 
     def on_mouse(event, x, y, flags, param):
-        # 鼠标点击按钮后，仅记录动作，由主循环统一处理
         if event != cv2.EVENT_LBUTTONDOWN:
             return
         for action, (x1, y1, x2, y2) in param["buttons"].items():
@@ -325,7 +329,7 @@ def main():
         row = rows[row_idx]
 
         img_path = resolve_path(row["image_path"], csv_path, workspace_root)
-        patch_path = (csv_path.parent / row["patch_path"]).resolve()
+        patch_path = resolve_path(row["patch_path"], csv_path, workspace_root)
 
         if img_path.exists():
             image_bgr = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
@@ -364,49 +368,46 @@ def main():
             action = ui_state["pending_action"]
             ui_state["pending_action"] = None
             if action == "left_plus":
-                # 左图放大倍率 ×2.5
                 ui_state["left_zoom_mult"] *= zoom_step
                 continue
             if action == "left_minus":
-                # 左图放大倍率 ÷2.5（下限保护）
                 ui_state["left_zoom_mult"] = max(1.0 / (zoom_step ** 6), ui_state["left_zoom_mult"] / zoom_step)
                 continue
             if action == "right_plus":
-                # 右图放大倍率 ×2.5
                 ui_state["right_zoom_mult"] *= zoom_step
                 continue
             if action == "right_minus":
-                # 右图放大倍率 ÷2.5（下限保护）
                 ui_state["right_zoom_mult"] = max(1.0 / (zoom_step ** 6), ui_state["right_zoom_mult"] / zoom_step)
                 continue
 
-            # 键盘仅负责打标签与翻页；鼠标只影响倍率视图
             if key in (ord("1"), ord("0"), ord("u")):
                 new_label = 1 if key == ord("1") else 0 if key == ord("0") else -1
                 if to_int_label(row.get("label", -1)) != new_label:
                     rows[row_idx]["label"] = str(new_label)
                     changed += 1
                 pos += 1
+                save_state(targets[pos] if pos < len(targets) else len(rows))
                 if changed >= max(1, args.autosave_every):
                     write_rows(csv_path, headers, rows)
                     changed = 0
                 break
             if key == ord("s"):
                 pos += 1
+                save_state(targets[pos] if pos < len(targets) else len(rows))
                 break
             if key == ord("b"):
                 pos = max(0, pos - 1)
+                save_state(targets[pos] if pos < len(targets) else len(rows))
                 break
             if key in (ord("q"), 27):
+                save_state(row_idx)
                 pos = len(targets)
                 break
 
-    # 退出前兜底保存未落盘修改
     if changed > 0:
         write_rows(csv_path, headers, rows)
     cv2.destroyAllWindows()
 
-    # 退出时自动输出统计、比例和下次标注建议
     n_pos, n_neg, n_unlabeled, ratio_text, advice = summarize_labels(rows)
     print(f"saved: {csv_path}")
     print(f"label_counts: {{1: {n_pos}, 0: {n_neg}, -1: {n_unlabeled}}}")

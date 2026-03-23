@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -59,7 +59,22 @@ def train_boundary_head(
 ):
     device = torch.device(device)
     dataset = BoundaryPatchDataset(csv_path)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    labels = [label for _, label in dataset.records]
+    count_0 = sum(1 for v in labels if v == 0)
+    count_1 = sum(1 for v in labels if v == 1)
+    weights = []
+    for label in labels:
+        if label == 0:
+            weights.append(1.0 / max(1, count_0))
+        else:
+            weights.append(1.0 / max(1, count_1))
+    sampler = WeightedRandomSampler(
+        weights=torch.as_tensor(weights, dtype=torch.double),
+        num_samples=len(weights),
+        replacement=True,
+    )
+    loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler, num_workers=0)
+    print(f"[data] labels: class0={count_0}, class1={count_1}, sampler=weighted_random")
 
     model = BoundaryQualityHead().to(device)
     criterion = nn.BCEWithLogitsLoss()
