@@ -1,0 +1,2 @@
+D:\zjy\code\RealtimeAI-Inspect\RtDETRv2\output\rtdetrv2_fiber_4\hqsam_results_vith_cons_hybrid_V1\00002_hqsam_contours.jpg
+True
