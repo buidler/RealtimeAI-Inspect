@@ -196,14 +196,14 @@ def _interactive_pick(image_np, candidates, window_name, view_max_w=1600, view_m
 
         info = (
             f"selected={len(selected)}/{len(candidates)}  "
-            f"left=toggle  right-drag=pan  arrows/WASD=pan  [a]=all [c]=clear [n]=next [q]=quit"
+            f"left=toggle  right-drag=pan  arrows/WASD=pan  [f]=all [c]=clear [n]=next [q]=quit"
         )
         cv2.rectangle(canvas, (0, 0), (canvas.shape[1], 32), (20, 20, 20), -1)
         cv2.putText(canvas, info, (8, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2, cv2.LINE_AA)
 
         cv2.imshow(window_name, cv2.cvtColor(canvas, cv2.COLOR_RGB2BGR))
         key = cv2.waitKeyEx(30)
-        if key == ord("a"):
+        if key in (ord("f"), ord("F")):
             selected.clear()
             selected.update(range(len(candidates)))
         elif key == ord("c"):
