@@ -20,8 +20,14 @@ from references.deploy.rtdetrv2_hqsam_infer import (
     _select_best_hqsam_contour,
 )
 
+# V1 基线版：
+# - 使用 HQ-SAM + 传统轮廓 的混合选择策略。
+# - 流程保持简洁，便于复现和与其他版本做公平对比。
+# - 目标是稳定、可解释：尽量少引入复杂后处理。
 
 def _resolve_path(raw_path, field_name, allow_missing=False):
+    # 兼容相对路径/绝对路径：
+    # 优先按原始路径解析；若失败，再尝试项目根目录与当前工作目录。
     p = Path(raw_path).expanduser()
     candidates = [p]
     if not p.is_absolute():
@@ -44,6 +50,7 @@ def _resolve_path(raw_path, field_name, allow_missing=False):
 
 
 def _list_images(image_dir):
+    # 递归读取图片，统一扩展名集合，保证批处理输入稳定。
     exts = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
     image_dir = Path(image_dir).resolve()
     if not image_dir.exists():
@@ -52,6 +59,7 @@ def _list_images(image_dir):
 
 
 def _polyline_length(pts):
+    # 闭合折线长度（最后一个点回连到首点），用于比较轮廓复杂度。
     if pts is None or len(pts) < 2:
         return 0.0
     arr = np.asarray(pts, dtype=np.float32)
@@ -60,6 +68,8 @@ def _polyline_length(pts):
 
 
 def _is_edge_hugging(pts, box, thr=3.0, frac=0.85):
+    # 判断轮廓是否“贴着检测框边缘走”：
+    # 若大比例点距离边缘小于阈值，则通常说明轮廓质量较差或过于框化。
     if pts is None or len(pts) < 3:
         return False
     arr = np.asarray(pts, dtype=np.float32)
@@ -76,6 +86,8 @@ def _is_edge_hugging(pts, box, thr=3.0, frac=0.85):
 
 
 def _polygon_overlap_with_mask(pts, hq_mask, image_size):
+    # 计算传统轮廓与 HQ-SAM mask 的重叠率（传统轮廓面积为分母）。
+    # 用于判断传统轮廓是否与语义掩码一致，避免选到离谱形状。
     if hq_mask is None or pts is None or len(pts) < 3:
         return 0.0
     w, h = image_size
@@ -91,6 +103,7 @@ def _polygon_overlap_with_mask(pts, hq_mask, image_size):
 
 
 def _box_iou(a, b):
+    # 基础 IoU，用于估计相邻框拥挤程度（重叠风险）。
     ax0, ay0, ax1, ay1 = [float(v) for v in a]
     bx0, by0, bx1, by1 = [float(v) for v in b]
     ix0 = max(ax0, bx0)
@@ -123,6 +136,12 @@ def _prepare_candidates_v2(
     edge_frac_thr=0.85,
     overlap_iou_thr=0.35,
 ):
+    # 对每个检测框同时构建 HQ-SAM 与传统轮廓候选，
+    # 再基于重叠度/长度比例/邻框风险等条件选择最终轮廓。
+    # 设计意图：
+    # - 传统轮廓在边缘细节上通常更“贴物体”，但容易受噪声影响；
+    # - HQ-SAM 更稳，但在部分细长/凹陷区域会偏保守。
+    # 因此用分级门控（high/mid）做折中，而不是固定偏向单一路径。
     candidates = []
     if use_hq_sam and predictor is not None:
         predictor.set_image(image_np)
@@ -178,6 +197,8 @@ def _prepare_candidates_v2(
             trad_mid = (not trad_edge or hq_edge) and overlap >= trad_overlap_thr_low and len_ratio >= trad_min_len_ratio_low
             risky_overlap = neigh_iou >= overlap_iou_thr
             low_score = s_j < 0.72
+            # high 条件允许在轻度风险下仍保留传统轮廓；
+            # mid 条件更保守，要求同时非高重叠风险且分数不低。
             if trad_high and not (risky_overlap and low_score):
                 final_contour = trad_contour
             elif trad_mid and not (risky_overlap or low_score):
@@ -207,6 +228,7 @@ def _prepare_candidates_v2(
 
 
 def _build_rtdetr_model(config_path, ckpt_path, device):
+    # 统一加载 EMA 权重（若存在）并切换到 deploy 结构。
     cfg = YAMLConfig(str(config_path), resume=str(ckpt_path))
     checkpoint = torch.load(ckpt_path, map_location="cpu")
     if "ema" in checkpoint:
@@ -230,6 +252,9 @@ def _build_rtdetr_model(config_path, ckpt_path, device):
 
 
 def _draw_and_save(im_pil, boxes_np, candidates, save_dir, stem):
+    # 可视化规则：
+    # - 红框：检测框
+    # - 黄线：最终选中轮廓（闭合绘制）
     drawer = ImageDraw.Draw(im_pil)
     for b in boxes_np:
         drawer.rectangle(list(b), outline="red")
@@ -238,7 +263,7 @@ def _draw_and_save(im_pil, boxes_np, candidates, save_dir, stem):
         if pts is None or len(pts) < 3:
             continue
         pts_seq = [(float(p[0]), float(p[1])) for p in pts]
-        drawer.line(pts_seq + [pts_seq[0]], fill="yellow", width=2)
+        drawer.line(pts_seq + [pts_seq[0]], fill="black", width=2)
     out_name = f"{stem}_hqsam_contours.jpg"
     out_path = save_dir / out_name
     im_pil.save(out_path)
@@ -260,6 +285,8 @@ def run_single(
     edge_frac_thr,
     overlap_iou_thr,
 ):
+    # 单图推理流程：
+    # 读图 -> 检测框 -> 分数过滤 -> 轮廓生成与选择 -> 绘制并保存。
     im_pil = Image.open(image_path).convert("RGB")
     image_np = np.array(im_pil)
     w, h = im_pil.size
@@ -294,6 +321,7 @@ def run_single(
 
 def main():
     parser = argparse.ArgumentParser()
+    # 基础 I/O 与模型配置
     parser.add_argument("-c", "--config", type=str, required=True)
     parser.add_argument("-r", "--resume", type=str, required=True)
     parser.add_argument("-f", "--im-file", type=str, default="")
@@ -304,6 +332,7 @@ def main():
     parser.add_argument("--use-hq-sam", action="store_true")
     parser.add_argument("--hq-sam-checkpoint", type=str, default=None)
     parser.add_argument("--hq-sam-model-type", type=str, default="vit_l")
+    # 轮廓融合策略参数（V1）
     parser.add_argument("--trad-overlap-thr-low", type=float, default=0.28)
     parser.add_argument("--trad-overlap-thr-high", type=float, default=0.42)
     parser.add_argument("--trad-min-len-ratio-low", type=float, default=0.18)
