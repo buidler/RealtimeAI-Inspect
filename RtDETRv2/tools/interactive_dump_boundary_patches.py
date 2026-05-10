@@ -117,41 +117,42 @@ def _prepare_candidates(im_pil, image_np, boxes, predictor, use_hq_sam):
     return candidates
 
 
-def _interactive_pick(image_np, candidates, window_name, view_max_w=1600, view_max_h=900):
-    selected = set()
+def _interactive_pick(
+    image_np,
+    candidates,
+    window_name,
+    view_max_w=1600,
+    view_max_h=900,
+    progress_text="",
+    initial_selected=None,
+    total_selected_base=0,
+):
+    selected = set(initial_selected or [])
     h, w = image_np.shape[:2]
     view_w = max(1, int(view_max_w))
     view_h = max(1, int(view_max_h))
     pan_x_max = max(0, w - view_w)
     pan_y_max = max(0, h - view_h)
-    ui = {"selected": selected, "dragging": False, "last_x": 0, "last_y": 0, "pan_x": 0, "pan_y": 0}
+    ui = {
+        "selected": selected,
+        "dragging": False,
+        "r_down": False,
+        "drag_moved": False,
+        "down_x": 0,
+        "down_y": 0,
+        "last_x": 0,
+        "last_y": 0,
+        "pan_x": 0,
+        "pan_y": 0,
+    }
 
     def clamp_pan():
         ui["pan_x"] = max(0, min(pan_x_max, int(ui["pan_x"])))
         ui["pan_y"] = max(0, min(pan_y_max, int(ui["pan_y"])))
 
-    def on_mouse(event, x, y, flags, param):
-        if event == cv2.EVENT_RBUTTONDOWN:
-            param["dragging"] = True
-            param["last_x"] = x
-            param["last_y"] = y
-            return
-        if event == cv2.EVENT_RBUTTONUP:
-            param["dragging"] = False
-            return
-        if event == cv2.EVENT_MOUSEMOVE and param["dragging"]:
-            dx = x - param["last_x"]
-            dy = y - param["last_y"]
-            param["pan_x"] -= dx
-            param["pan_y"] -= dy
-            clamp_pan()
-            param["last_x"] = x
-            param["last_y"] = y
-            return
-        if event != cv2.EVENT_LBUTTONDOWN:
-            return
-        img_x = int(x + param["pan_x"])
-        img_y = int(y + param["pan_y"])
+    def _toggle_candidate_at(param, click_x, click_y):
+        img_x = int(click_x + param["pan_x"])
+        img_y = int(click_y + param["pan_y"])
         if img_x < 0 or img_x >= w or img_y < 0 or img_y >= h:
             return
         best_i = None
@@ -169,6 +170,38 @@ def _interactive_pick(image_np, candidates, window_name, view_max_w=1600, view_m
             param["selected"].remove(best_i)
         else:
             param["selected"].add(best_i)
+
+    def on_mouse(event, x, y, flags, param):
+        if event == cv2.EVENT_RBUTTONDOWN:
+            param["r_down"] = True
+            param["dragging"] = False
+            param["drag_moved"] = False
+            param["down_x"] = x
+            param["down_y"] = y
+            param["last_x"] = x
+            param["last_y"] = y
+            return
+        if event == cv2.EVENT_MOUSEMOVE and param["r_down"]:
+            dx0 = x - param["down_x"]
+            dy0 = y - param["down_y"]
+            if not param["dragging"] and (dx0 * dx0 + dy0 * dy0) >= 36:
+                param["dragging"] = True
+            if param["dragging"]:
+                dx = x - param["last_x"]
+                dy = y - param["last_y"]
+                param["pan_x"] -= dx
+                param["pan_y"] -= dy
+                clamp_pan()
+                param["last_x"] = x
+                param["last_y"] = y
+                param["drag_moved"] = True
+            return
+        if event == cv2.EVENT_RBUTTONUP:
+            if param["r_down"] and (not param["drag_moved"]):
+                _toggle_candidate_at(param, x, y)
+            param["r_down"] = False
+            param["dragging"] = False
+            return
 
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(window_name, view_w, view_h)
@@ -195,8 +228,9 @@ def _interactive_pick(image_np, candidates, window_name, view_max_w=1600, view_m
             cv2.putText(canvas, f"{i}", (dx0, max(12, dy0 - 4)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
         info = (
-            f"selected={len(selected)}/{len(candidates)}  "
-            f"left=toggle  right-drag=pan  arrows/WASD=pan  [f]=all [c]=clear [n]=next [q]=quit"
+            f"{progress_text}  selected={len(selected)}/{len(candidates)}  "
+            f"total_selected={int(total_selected_base) + len(selected)}  "
+            f"right=click toggle / drag pan  arrows/WASD=pan  [f]=all [c]=clear [n]=next [q]=quit"
         )
         cv2.rectangle(canvas, (0, 0), (canvas.shape[1], 32), (20, 20, 20), -1)
         cv2.putText(canvas, info, (8, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 230, 230), 2, cv2.LINE_AA)
@@ -219,6 +253,7 @@ def _interactive_pick(image_np, candidates, window_name, view_max_w=1600, view_m
         elif key == ord("n"):
             return sorted(selected), False
         elif key in (ord("q"), 27):
+            cv2.destroyWindow(window_name)
             return sorted(selected), True
 
 
@@ -303,15 +338,15 @@ def interactive_dump_patches(
             selected_indices, stop_flag = _interactive_pick(
                 image_np,
                 candidates,
-                f"Fiber Picker {img_idx + 1}/{len(image_paths)}",
+                "Fiber Picker",
                 view_max_w=view_max_width,
                 view_max_h=view_max_height,
+                progress_text=f"image {img_idx + 1}/{len(image_paths)}: {img_path.name}",
             )
             if stop_flag:
                 stop_all = True
             if not selected_indices:
                 print(f"[pick] {img_idx + 1}/{len(image_paths)}: {img_path}, selected=0")
-                save_state(img_idx + 1)
                 continue
 
             patches_this_image = 0
@@ -330,7 +365,7 @@ def interactive_dump_patches(
                 patch_size = 64
                 half = patch_size // 2
                 for k, (x, y) in enumerate(samples):
-                    if patches_this_image >= max_patches_per_image:
+                    if max_patches_per_image > 0 and patches_this_image >= max_patches_per_image:
                         break
                     x_i, y_i = int(x), int(y)
                     x0 = max(0, x_i - half)
@@ -377,10 +412,9 @@ def interactive_dump_patches(
             print(
                 f"[dump] {img_idx + 1}/{len(image_paths)}: {img_path}, selected={len(selected_indices)}, patches={patches_this_image}"
             )
-            save_state(img_idx + 1)
-
-    if not disable_auto_resume and start_img_idx >= len(image_paths):
-        save_state(len(image_paths))
+            if patches_this_image > 0:
+                # 仅在“实际写入标注 patch”时推进断点，且落在当前图片上。
+                save_state(img_idx)
 
     cv2.destroyAllWindows()
 
@@ -398,7 +432,7 @@ def main():
     parser.add_argument("--use-hq-sam", action="store_true")
     parser.add_argument("--hq-sam-checkpoint", type=str, default=None)
     parser.add_argument("--hq-sam-model-type", type=str, default="vit_l")
-    parser.add_argument("--max-patches-per-image", type=int, default=64)
+    parser.add_argument("--max-patches-per-image", type=int, default=-1)
     parser.add_argument("--view-max-width", type=int, default=1600)
     parser.add_argument("--view-max-height", type=int, default=900)
     parser.add_argument("--state-path", type=str, default="")
